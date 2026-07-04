@@ -4,7 +4,7 @@ import { useRecipeStore } from "@/store/recipe-store";
 import { useGenerateRecipe } from "@/hooks/use-generate-recipe";
 import type { MealType } from "@/types";
 
-const MEAL_TYPES: { value: MealType; label: string; emoji: string }[] = [
+const MEALS: { value: MealType; label: string; emoji: string }[] = [
   { value: "BREAKFAST", label: "Breakfast", emoji: "☀️" },
   { value: "LUNCH", label: "Lunch", emoji: "🍽️" },
   { value: "DINNER", label: "Dinner", emoji: "🌙" },
@@ -12,225 +12,205 @@ const MEAL_TYPES: { value: MealType; label: string; emoji: string }[] = [
   { value: "SNACK", label: "Snack", emoji: "🥨" },
 ];
 
-const QUICK_COMBOS = [
-  { label: "🍗 Chicken + Rice", ingredients: ["chicken", "rice", "garlic", "soy sauce"] },
-  { label: "🍝 Italian Classic", ingredients: ["pasta", "tomato", "basil", "mozzarella"] },
-  { label: "🧁 Baking Basics", ingredients: ["eggs", "flour", "sugar", "butter", "vanilla"] },
-  { label: "🐟 Healthy Salmon", ingredients: ["salmon", "lemon", "dill", "asparagus"] },
-  { label: "🥑 Avocado Toast", ingredients: ["avocado", "eggs", "bread", "lime", "chili"] },
+const COMBOS = [
+  { label: "🍗 Chicken + Rice", items: ["chicken", "rice", "garlic", "soy sauce"] },
+  { label: "🍝 Italian Classic", items: ["pasta", "tomato", "basil", "mozzarella"] },
+  { label: "🧁 Baking Basics", items: ["eggs", "flour", "sugar", "butter"] },
+  { label: "🐟 Healthy Salmon", items: ["salmon", "lemon", "dill", "asparagus"] },
+  { label: "🥑 Avocado Toast", items: ["avocado", "eggs", "bread", "lime"] },
 ];
 
-const FLOATING_ITEMS = [
-  { emoji: "🥚", left: "5%", duration: "18s", delay: "0s" },
-  { emoji: "🧀", left: "15%", duration: "22s", delay: "2s" },
-  { emoji: "🍅", left: "25%", duration: "16s", delay: "4s" },
-  { emoji: "🥔", left: "38%", duration: "20s", delay: "1s" },
-  { emoji: "🧅", left: "52%", duration: "19s", delay: "3s" },
-  { emoji: "🌿", left: "65%", duration: "21s", delay: "5s" },
-  { emoji: "🍋", left: "78%", duration: "17s", delay: "2s" },
-  { emoji: "🫑", left: "88%", duration: "23s", delay: "4s" },
-  { emoji: "🧄", left: "42%", duration: "25s", delay: "6s" },
-  { emoji: "🥕", left: "72%", duration: "20s", delay: "0s" },
+const FLOATS = [
+  { e: "🥚", l: "6%",  d: "18s", dl: "0s" },
+  { e: "🧀", l: "16%", d: "23s", dl: "2s" },
+  { e: "🍅", l: "28%", d: "17s", dl: "4s" },
+  { e: "🥔", l: "40%", d: "21s", dl: "1s" },
+  { e: "🧅", l: "54%", d: "19s", dl: "3s" },
+  { e: "🌿", l: "66%", d: "22s", dl: "5s" },
+  { e: "🍋", l: "78%", d: "18s", dl: "2s" },
+  { e: "🧄", l: "44%", d: "25s", dl: "6s" },
+  { e: "🥕", l: "88%", d: "20s", dl: "0s" },
 ];
 
 export function Hero() {
-  const {
-    ingredients,
-    mealType,
-    setIngredients,
-    setMealType,
-    error,
-  } = useRecipeStore();
+  const { ingredients, mealType, setIngredients, setMealType, error } = useRecipeStore();
   const { generate, isGenerating } = useGenerateRecipe();
 
-  const handleTextChange = (text: string) => {
-    const items = text
-      .split(/[\n,;]+/)
-      .map((s) => s.replace(/^[-•*]\s*/, "").trim())
-      .filter((s) => s.length > 0);
+  const handleText = (text: string) => {
+    const items = text.split(/[\n,;]+/).map((s) => s.replace(/^[-•*]\s*/, "").trim()).filter(Boolean);
     setIngredients([...new Set(items)]);
   };
 
-  const removeIngredient = (index: number) => {
+  const removeTag = (i: number) => {
     const next = [...ingredients];
-    next.splice(index, 1);
+    next.splice(i, 1);
     setIngredients(next);
   };
 
   return (
-    <section id="hero" className="min-h-screen flex flex-col items-center justify-center text-center px-5 pt-32 pb-16 relative overflow-hidden">
-      {/* BG gradient */}
-      <div className="absolute inset-0 overflow-hidden">
+    <section className="hero" id="hero">
+      {/* BG Gradient Orbs */}
+      <div style={{ position: "absolute", inset: 0, overflow: "hidden", pointerEvents: "none" }}>
         <div
-          className="absolute -top-1/2 -left-1/2 w-[200%] h-[200%] animate-gradient"
           style={{
-            background:
-              "radial-gradient(ellipse at 30% 50%, rgba(74,222,128,0.15) 0%, transparent 50%), radial-gradient(ellipse at 70% 50%, rgba(74,222,128,0.05) 0%, transparent 50%)",
+            position: "absolute", top: "-40%", left: "-40%", width: "180%", height: "180%",
+            background: "radial-gradient(ellipse at 35% 50%, rgba(74,222,128,0.12) 0%, transparent 55%), radial-gradient(ellipse at 65% 45%, rgba(34,211,238,0.06) 0%, transparent 50%)",
+            animation: "gradientMove 18s ease infinite",
+          }}
+        />
+        <div
+          style={{
+            position: "absolute", width: 420, height: 420, borderRadius: "50%",
+            background: "var(--accent)", filter: "blur(100px)", opacity: 0.18,
+            top: "8%", left: "12%", animation: "float 8s ease-in-out infinite",
+          }}
+        />
+        <div
+          style={{
+            position: "absolute", width: 300, height: 300, borderRadius: "50%",
+            background: "#22d3ee", filter: "blur(90px)", opacity: 0.08,
+            bottom: "15%", right: "12%", animation: "float 10s ease-in-out infinite",
+            animationDelay: "-5s",
           }}
         />
       </div>
 
       {/* Grid */}
       <div
-        className="absolute inset-0 opacity-50"
         style={{
-          backgroundImage:
-            "linear-gradient(rgba(255,255,255,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.06) 1px, transparent 1px)",
-          backgroundSize: "60px 60px",
-          maskImage: "radial-gradient(ellipse at center, black 30%, transparent 70%)",
-          WebkitMaskImage: "radial-gradient(ellipse at center, black 30%, transparent 70%)",
+          position: "absolute", inset: 0, opacity: 0.35, pointerEvents: "none",
+          backgroundImage: "linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px)",
+          backgroundSize: "70px 70px",
+          maskImage: "radial-gradient(ellipse at center, black 25%, transparent 70%)",
+          WebkitMaskImage: "radial-gradient(ellipse at center, black 25%, transparent 70%)",
         }}
       />
 
-      {/* Orbs */}
-      <div className="absolute w-[400px] h-[400px] rounded-full blur-[80px] opacity-30 bg-accent top-[10%] left-[15%] animate-float" />
-      <div className="absolute w-[300px] h-[300px] rounded-full blur-[80px] opacity-15 bg-cyan-400 bottom-[20%] right-[15%] animate-float" style={{ animationDelay: "-7s" }} />
-
-      {/* Floating ingredients */}
-      <div className="absolute inset-0 pointer-events-none z-[1] overflow-hidden" aria-hidden>
-        {FLOATING_ITEMS.map((item, i) => (
-          <div
-            key={i}
-            className="absolute text-[2.5rem] opacity-15"
-            style={{
-              left: item.left,
-              animation: `floatIngredient ${item.duration} ${item.delay} ease-in-out infinite`,
-            }}
-          >
-            {item.emoji}
-          </div>
-        ))}
-        <style>{`
-          @keyframes floatIngredient {
-            0% { transform: translateY(100vh) rotate(0deg) scale(0.5); opacity: 0; }
-            10% { opacity: 0.15; }
-            90% { opacity: 0.15; }
-            100% { transform: translateY(-100px) rotate(360deg) scale(1.2); opacity: 0; }
-          }
-        `}</style>
-      </div>
+      {/* Floating emojis */}
+      {FLOATS.map((f, i) => (
+        <div
+          key={i}
+          className="float-item"
+          style={{ left: f.l, ["--dur" as string]: f.d, ["--delay" as string]: f.dl } as React.CSSProperties}
+        >
+          {f.e}
+        </div>
+      ))}
 
       {/* Content */}
-      <div className="relative z-[2] max-w-[900px] w-full">
+      <div style={{ position: "relative", zIndex: 2, maxWidth: 920, width: "100%" }}>
         {/* Badge */}
-        <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-card border border-border rounded-full text-sm font-medium text-muted mb-8 backdrop-blur-lg animate-fade-in-up" style={{ animationDelay: "0.2s" }}>
-          <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse-slow" />
+        <div
+          className="glass"
+          style={{
+            display: "inline-flex", alignItems: "center", gap: 10,
+            padding: "8px 20px", borderRadius: 100, fontSize: "0.8rem",
+            fontWeight: 500, color: "var(--muted)", marginBottom: 36,
+            opacity: 0, animation: "fadeUp 0.8s 0.1s var(--ease) forwards",
+          }}
+        >
+          <span style={{ width: 7, height: 7, borderRadius: "50%", background: "var(--accent)", animation: "pulse 2s infinite" }} />
           AI-Powered Recipe Generation
         </div>
 
-        {/* Heading */}
+        {/* Title */}
         <h1
-          className="text-[clamp(3rem,7vw,5.5rem)] font-extrabold tracking-[-0.04em] leading-[1.05] mb-6 opacity-0 animate-fade-in-up"
-          style={{ animationDelay: "0.4s" }}
+          className="hero-title"
+          style={{ opacity: 0, animation: "fadeUp 0.9s 0.25s var(--ease) forwards" }}
         >
-          What can you
-          <br />
-          <span className="bg-gradient-to-br from-accent to-cyan-400 bg-clip-text text-transparent">
-            cook today?
-          </span>
+          What can you<br />
+          <span className="hero-gradient">cook today?</span>
         </h1>
 
         {/* Subtitle */}
-        <p className="text-[clamp(1rem,2vw,1.25rem)] text-muted max-w-[600px] mx-auto mb-10 leading-relaxed opacity-0 animate-fade-in-up" style={{ animationDelay: "0.6s" }}>
+        <p
+          className="hero-subtitle"
+          style={{
+            margin: "0 auto 48px", opacity: 0,
+            animation: "fadeUp 0.9s 0.4s var(--ease) forwards",
+          }}
+        >
           Tell us what&apos;s in your kitchen and let AI create the perfect recipe — personalized, nutritious, and delicious.
         </p>
 
         {/* Input Card */}
-        <div className="max-w-[680px] mx-auto opacity-0 animate-fade-in-up" style={{ animationDelay: "0.8s" }}>
-          <div className="bg-glass backdrop-blur-xl border border-glass-border rounded-3xl p-6 shadow-[0_8px_32px_rgba(0,0,0,0.4)] transition-all duration-400 focus-within:border-accent focus-within:shadow-[0_0_60px_rgba(74,222,128,0.15),0_8px_32px_rgba(0,0,0,0.4)]">
+        <div style={{ opacity: 0, animation: "fadeUp 0.9s 0.55s var(--ease) forwards" }}>
+          <div className="glass-strong input-card" style={{ margin: "0 auto" }}>
             {/* Header */}
-            <div className="flex items-center gap-3 mb-4 pb-4 border-b border-border">
-              <div className="w-10 h-10 rounded-[10px] bg-accent-dim flex items-center justify-center text-xl">
-                🧑‍🍳
-              </div>
-              <div className="text-left">
-                <h3 className="text-sm font-semibold">Your Ingredients</h3>
-                <p className="text-xs text-muted-2">Type or paste what you have available</p>
+            <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 20, paddingBottom: 20, borderBottom: "1px solid var(--border)" }}>
+              <div className="feature-icon" style={{ width: 48, height: 48, marginBottom: 0 }}>🧑‍🍳</div>
+              <div style={{ textAlign: "left" }}>
+                <div style={{ fontSize: "0.95rem", fontWeight: 700 }}>Your Ingredients</div>
+                <div style={{ fontSize: "0.78rem", color: "var(--muted-2)" }}>Type or paste what you have available</div>
               </div>
             </div>
 
             {/* Textarea */}
             <textarea
-              className="w-full min-h-[120px] bg-transparent border-none outline-none resize-none text-foreground text-base leading-[1.8] placeholder:text-muted-2"
+              className="input-textarea"
               placeholder={"eggs\npotatoes\ncheese\ntomato\nonions..."}
               value={ingredients.join("\n")}
-              onChange={(e) => handleTextChange(e.target.value)}
+              onChange={(e) => handleText(e.target.value)}
               aria-label="Enter your ingredients"
-              rows={4}
             />
 
             {/* Tags */}
             {ingredients.length > 0 && (
-              <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-border">
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 20, paddingTop: 20, borderTop: "1px solid var(--border)" }}>
                 {ingredients.map((ing, i) => (
-                  <span
-                    key={`${ing}-${i}`}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-accent-dim border border-[rgba(74,222,128,0.2)] rounded-full text-sm font-medium text-accent"
-                    style={{ animation: "fadeInUp 0.4s cubic-bezier(0.16,1,0.3,1)" }}
-                  >
+                  <span key={`${ing}-${i}`} className="tag">
                     {ing}
-                    <button
-                      onClick={() => removeIngredient(i)}
-                      className="opacity-60 hover:opacity-100 transition-opacity text-base leading-none"
-                      aria-label={`Remove ${ing}`}
-                    >
-                      ×
-                    </button>
+                    <button onClick={() => removeTag(i)} aria-label={`Remove ${ing}`}>×</button>
                   </span>
                 ))}
               </div>
             )}
 
-            {/* Meal type */}
-            <div className="flex gap-2 mt-5 flex-wrap" role="radiogroup" aria-label="Meal type">
-              {MEAL_TYPES.map((mt) => (
+            {/* Meal pills */}
+            <div style={{ display: "flex", gap: 8, marginTop: 24, flexWrap: "wrap" }}>
+              {MEALS.map((m) => (
                 <button
-                  key={mt.value}
-                  onClick={() => setMealType(mt.value)}
-                  className={`px-4 py-2 rounded-full text-sm font-medium border transition-all duration-300 flex items-center gap-1.5 hover:-translate-y-0.5 ${
-                    mealType === mt.value
-                      ? "bg-accent text-black border-accent shadow-[0_0_20px_rgba(74,222,128,0.3)]"
-                      : "bg-transparent text-muted border-border hover:border-border-hover hover:text-foreground"
-                  }`}
+                  key={m.value}
+                  onClick={() => setMealType(m.value)}
+                  className={`meal-pill ${mealType === m.value ? "active" : ""}`}
                 >
-                  {mt.emoji} {mt.label}
+                  {m.emoji} {m.label}
                 </button>
               ))}
             </div>
 
-            {/* Generate button */}
+            {/* Generate */}
             <button
               onClick={generate}
               disabled={ingredients.length === 0 || isGenerating}
-              className="w-full mt-6 py-4 rounded-2xl text-base font-bold border-none bg-gradient-to-br from-accent to-accent-2 text-black relative overflow-hidden transition-all duration-400 hover:-translate-y-0.5 hover:shadow-[0_10px_40px_rgba(74,222,128,0.3)] active:translate-y-0 disabled:opacity-50 disabled:pointer-events-none flex items-center justify-center gap-2"
+              className="btn-primary"
+              style={{ width: "100%", marginTop: 28, padding: "20px", fontSize: "1.1rem", borderRadius: 20 }}
             >
-              <span className="inline-block" style={{ animation: "spin 3s linear infinite" }}>
-                ✨
-              </span>
+              <span style={{ display: "inline-block", animation: "spin 3s linear infinite" }}>✨</span>
               Generate Recipe
             </button>
 
             {/* Error */}
             {error && (
-              <div className="mt-3 text-sm text-red-400 text-center animate-fade-in-up">
+              <p style={{ marginTop: 12, fontSize: "0.875rem", color: "#f87171", textAlign: "center", animation: "fadeUp 0.4s var(--ease)" }}>
                 {error}
-              </div>
+              </p>
             )}
           </div>
 
-          {/* Quick suggestions */}
-          <div className="mt-6 text-center">
-            <p className="text-xs text-muted-2 uppercase tracking-[0.1em] mb-3">
+          {/* Quick combos */}
+          <div style={{ marginTop: 28, textAlign: "center" }}>
+            <p style={{ fontSize: "0.7rem", color: "var(--muted-2)", textTransform: "uppercase", letterSpacing: "0.15em", marginBottom: 12 }}>
               Try these combos
             </p>
-            <div className="flex flex-wrap justify-center gap-2">
-              {QUICK_COMBOS.map((combo) => (
+            <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: 8 }}>
+              {COMBOS.map((c) => (
                 <button
-                  key={combo.label}
-                  onClick={() => setIngredients(combo.ingredients)}
-                  className="px-3 py-1.5 rounded-full text-xs border border-border bg-transparent text-muted transition-all duration-300 hover:border-accent hover:text-accent hover:bg-accent-dim hover:-translate-y-0.5"
+                  key={c.label}
+                  onClick={() => setIngredients(c.items)}
+                  className="quick-chip"
                 >
-                  {combo.label}
+                  {c.label}
                 </button>
               ))}
             </div>

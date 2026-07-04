@@ -3,59 +3,48 @@
 import { useEffect, useRef } from "react";
 
 const STEPS = [
-  { num: "1", title: "List ingredients", desc: "Type, paste, or photograph what you have available in your kitchen." },
-  { num: "2", title: "Choose meal type", desc: "Select breakfast, lunch, dinner, dessert or snack to guide the AI." },
-  { num: "3", title: "Cook & enjoy", desc: "Follow step-by-step instructions with timers and chef's tips." },
+  { n: "1", t: "List ingredients", d: "Type, paste, or photograph what you have available in your kitchen." },
+  { n: "2", t: "Choose meal type", d: "Select breakfast, lunch, dinner, dessert or snack to guide the AI." },
+  { n: "3", t: "Cook & enjoy", d: "Follow step-by-step instructions with timers and chef's tips." },
 ];
 
 export function HowItWorks() {
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            entry.target.classList.add("opacity-100", "translate-y-0");
-            entry.target.classList.remove("opacity-0", "translate-y-8");
-          }
-        });
-      },
+    const obs = new IntersectionObserver(
+      (entries) => entries.forEach((e) => {
+        if (e.isIntersecting) e.target.classList.add("visible");
+      }),
       { threshold: 0.1 }
     );
-    ref.current?.querySelectorAll("[data-reveal]").forEach((el) => observer.observe(el));
-    return () => observer.disconnect();
+    ref.current?.querySelectorAll("[data-reveal]").forEach((el) => obs.observe(el));
+    return () => obs.disconnect();
   }, []);
 
   return (
-    <section id="how-it-works" className="py-32 px-5 bg-[#0a0a0a]" ref={ref}>
-      <div className="max-w-[1200px] mx-auto text-center">
-        <div data-reveal className="opacity-0 translate-y-8 transition-all duration-800">
-          <div className="text-xs font-semibold uppercase tracking-[0.15em] text-accent mb-4 flex items-center gap-2 justify-center">
-            <span className="w-5 h-[1px] bg-accent" />How it works
-          </div>
-          <h2 className="text-[clamp(2rem,4vw,3.5rem)] font-extrabold tracking-[-0.04em] leading-[1.1] mb-2 mx-auto">
+    <section className="section" id="how-it-works" style={{ background: "var(--bg-2)" }} ref={ref}>
+      <div style={{ maxWidth: 1200, margin: "0 auto", textAlign: "center" }}>
+        <div data-reveal>
+          <div className="section-label" style={{ justifyContent: "center" }}>How it works</div>
+          <h2 className="section-title" style={{ margin: "0 auto 8px" }}>
             Three simple steps<br />to a perfect meal
           </h2>
-          <p className="text-lg text-muted mx-auto">
+          <p className="section-desc" style={{ margin: "0 auto" }}>
             From fridge to fork in under a minute. No planning needed.
           </p>
         </div>
 
-        <div className="flex max-md:flex-col gap-8 mt-16 relative">
-          <div className="absolute top-[35px] left-[35px] right-[35px] h-[1px] bg-gradient-to-r from-accent via-border to-accent opacity-30 max-md:hidden" />
-          {STEPS.map((step, i) => (
+        <div style={{ display: "flex", gap: 32, marginTop: 72, flexWrap: "wrap", justifyContent: "center", position: "relative" }}>
+          {STEPS.map((s, i) => (
             <div
-              key={step.num}
+              key={s.n}
               data-reveal
-              className="flex-1 text-center relative opacity-0 translate-y-8 transition-all duration-800"
-              style={{ transitionDelay: `${i * 150}ms` }}
+              style={{ flex: "1 1 260px", maxWidth: 340, textAlign: "center", transitionDelay: `${i * 120}ms` }}
             >
-              <div className="w-[70px] h-[70px] rounded-full bg-card border border-border flex items-center justify-center text-2xl font-extrabold text-accent mx-auto mb-6 relative z-[1] transition-all duration-300 hover:bg-accent hover:text-black hover:border-accent hover:shadow-[0_0_60px_rgba(74,222,128,0.15)] hover:scale-110">
-                {step.num}
-              </div>
-              <h3 className="text-lg font-bold mb-2">{step.title}</h3>
-              <p className="text-sm text-muted leading-relaxed">{step.desc}</p>
+              <div className="glass step-num">{s.n}</div>
+              <h3 style={{ fontSize: "1.15rem", fontWeight: 700, marginBottom: 8 }}>{s.t}</h3>
+              <p style={{ fontSize: "0.9rem", color: "var(--muted)", lineHeight: 1.7 }}>{s.d}</p>
             </div>
           ))}
         </div>

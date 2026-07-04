@@ -1,62 +1,39 @@
 import Link from "next/link";
 
+const COLS = [
+  { title: "Product", links: [{ l: "Features", h: "#features" }, { l: "Pricing", h: "#pricing" }, { l: "Meal Planner", h: "#" }, { l: "Cook Mode", h: "#" }] },
+  { title: "Company", links: [{ l: "About", h: "#" }, { l: "Blog", h: "#" }, { l: "Careers", h: "#" }, { l: "Press", h: "#" }] },
+  { title: "Legal", links: [{ l: "Privacy", h: "#" }, { l: "Terms", h: "#" }, { l: "Cookies", h: "#" }] },
+];
+
 export function Footer() {
   return (
-    <footer className="py-16 px-5 border-t border-border mt-16">
-      <div className="max-w-[1200px] mx-auto grid grid-cols-[2fr_1fr_1fr_1fr] max-md:grid-cols-2 gap-12">
+    <footer style={{ padding: "72px 24px 24px", borderTop: "1px solid var(--border)", marginTop: 72 }}>
+      <div style={{ maxWidth: 1200, margin: "0 auto", display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr", gap: 48 }}>
         <div>
-          <h3 className="text-[1.4rem] font-extrabold tracking-[-0.04em] mb-3">
-            Chef<span className="text-accent">AI</span>
+          <h3 style={{ fontSize: "1.5rem", fontWeight: 800, letterSpacing: "-0.04em", marginBottom: 12 }}>
+            Chef<span style={{ color: "var(--accent)" }}>AI</span>
           </h3>
-          <p className="text-sm text-muted leading-relaxed max-w-[280px]">
+          <p style={{ fontSize: "0.875rem", color: "var(--muted)", lineHeight: 1.7, maxWidth: 280 }}>
             AI-powered recipe generation for the modern home chef. Turn any ingredients into extraordinary meals.
           </p>
         </div>
-        {[
-          {
-            title: "Product",
-            links: [
-              { label: "Features", href: "#features" },
-              { label: "Pricing", href: "#pricing" },
-              { label: "Meal Planner", href: "/meal-planner" },
-              { label: "Cook Mode", href: "#" },
-            ],
-          },
-          {
-            title: "Company",
-            links: [
-              { label: "About", href: "#" },
-              { label: "Blog", href: "#" },
-              { label: "Careers", href: "#" },
-              { label: "Press", href: "#" },
-            ],
-          },
-          {
-            title: "Legal",
-            links: [
-              { label: "Privacy", href: "#" },
-              { label: "Terms", href: "#" },
-              { label: "Cookies", href: "#" },
-            ],
-          },
-        ].map((col) => (
+        {COLS.map((col) => (
           <div key={col.title}>
-            <h4 className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-2 mb-5">
+            <h4 style={{ fontSize: "0.72rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.14em", color: "var(--muted-2)", marginBottom: 20 }}>
               {col.title}
             </h4>
-            <ul className="space-y-2.5">
+            <ul style={{ listStyle: "none" }}>
               {col.links.map((link) => (
-                <li key={link.label}>
-                  <Link href={link.href} className="text-sm text-muted hover:text-foreground transition-colors">
-                    {link.label}
-                  </Link>
+                <li key={link.l} style={{ marginBottom: 10 }}>
+                  <Link href={link.h} className="footer-link">{link.l}</Link>
                 </li>
               ))}
             </ul>
           </div>
         ))}
       </div>
-      <div className="max-w-[1200px] mx-auto mt-12 pt-6 border-t border-border flex max-md:flex-col justify-between items-center text-xs text-muted-2 gap-2">
+      <div style={{ maxWidth: 1200, margin: "48px auto 0", paddingTop: 24, borderTop: "1px solid var(--border)", display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "0.75rem", color: "var(--muted-2)", flexWrap: "wrap", gap: 8 }}>
         <span>© 2026 ChefAI. All rights reserved.</span>
         <span>Made with 🤍 and AI</span>
       </div>

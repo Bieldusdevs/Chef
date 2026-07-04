@@ -16,33 +16,14 @@ export function GeneratingOverlay() {
   if (!isGenerating) return null;
 
   return (
-    <div className="fixed inset-0 bg-[rgba(0,0,0,0.85)] backdrop-blur-xl z-[50000] flex items-center justify-center flex-col gap-8 animate-fade-in-up">
-      {/* Spinner */}
-      <div className="w-20 h-20 relative">
-        <div
-          className="absolute inset-0 rounded-full border-2 border-transparent border-t-accent"
-          style={{ animation: "spin 1s linear infinite" }}
-        />
-        <div
-          className="absolute inset-2 rounded-full border-2 border-transparent border-r-[rgba(74,222,128,0.3)]"
-          style={{ animation: "spin 1.5s linear infinite reverse" }}
-        />
-      </div>
-
-      {/* Text */}
-      <div className="text-lg font-semibold animate-pulse-slow">
+    <div className="overlay">
+      <div className="spinner" />
+      <div style={{ fontSize: "1.15rem", fontWeight: 600, animation: "pulse 2s ease infinite" }}>
         Creating your recipe…
       </div>
-
-      {/* Steps */}
-      <div className="flex flex-col gap-2.5 text-sm text-muted-2">
+      <div style={{ display: "flex", flexDirection: "column", gap: 10, fontSize: "0.85rem", color: "var(--muted-2)" }}>
         {STEPS.map((step, i) => (
-          <div
-            key={i}
-            className={`transition-colors duration-300 ${
-              i <= generationStep ? "text-accent" : ""
-            }`}
-          >
+          <div key={i} style={{ color: i <= generationStep ? "var(--accent)" : undefined, transition: "color 0.3s" }}>
             {i <= generationStep ? "✅" : "⏳"} {step}
           </div>
         ))}

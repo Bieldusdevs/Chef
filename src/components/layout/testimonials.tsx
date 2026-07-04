@@ -2,78 +2,44 @@
 
 import { useEffect, useRef } from "react";
 
-const TESTIMONIALS = [
-  {
-    stars: "★★★★★",
-    text: "ChefAI completely changed how I cook. I used to waste so much food — now every ingredient gets used in something delicious.",
-    name: "Sofia Mendes",
-    role: "Home Cook, Lisbon",
-    initials: "SM",
-  },
-  {
-    stars: "★★★★★",
-    text: "The meal planner is incredible. I save 3+ hours per week on planning and grocery shopping. The recipes are genuinely creative.",
-    name: "James Kim",
-    role: "Fitness Coach, London",
-    initials: "JK",
-  },
-  {
-    stars: "★★★★★",
-    text: "Cook Mode is a game changer. Step-by-step with timers, keeping my screen on — it's like having a sous chef in my pocket.",
-    name: "Ana Rodrigues",
-    role: "Food Blogger, Porto",
-    initials: "AR",
-  },
+const DATA = [
+  { stars: "★★★★★", text: "ChefAI completely changed how I cook. I used to waste so much food — now every ingredient gets used in something delicious.", name: "Sofia Mendes", role: "Home Cook, Lisbon", init: "SM" },
+  { stars: "★★★★★", text: "The meal planner is incredible. I save 3+ hours per week on planning and grocery shopping. The recipes are genuinely creative.", name: "James Kim", role: "Fitness Coach, London", init: "JK" },
+  { stars: "★★★★★", text: "Cook Mode is a game changer. Step-by-step with timers, keeping my screen on — it's like having a sous chef in my pocket.", name: "Ana Rodrigues", role: "Food Blogger, Porto", init: "AR" },
 ];
 
 export function Testimonials() {
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            entry.target.classList.add("opacity-100", "translate-y-0");
-            entry.target.classList.remove("opacity-0", "translate-y-8");
-          }
-        });
-      },
+    const obs = new IntersectionObserver(
+      (entries) => entries.forEach((e) => { if (e.isIntersecting) e.target.classList.add("visible"); }),
       { threshold: 0.1 }
     );
-    ref.current?.querySelectorAll("[data-reveal]").forEach((el) => observer.observe(el));
-    return () => observer.disconnect();
+    ref.current?.querySelectorAll("[data-reveal]").forEach((el) => obs.observe(el));
+    return () => obs.disconnect();
   }, []);
 
   return (
-    <section id="testimonials" className="py-32 px-5 bg-[#0a0a0a]" ref={ref}>
-      <div className="max-w-[1200px] mx-auto text-center">
-        <div data-reveal className="opacity-0 translate-y-8 transition-all duration-800">
-          <div className="text-xs font-semibold uppercase tracking-[0.15em] text-accent mb-4 flex items-center gap-2 justify-center">
-            <span className="w-5 h-[1px] bg-accent" />Testimonials
-          </div>
-          <h2 className="text-[clamp(2rem,4vw,3.5rem)] font-extrabold tracking-[-0.04em] leading-[1.1]">
-            Loved by home chefs<br />around the world
-          </h2>
+    <section className="section" id="testimonials" style={{ background: "var(--bg-2)" }} ref={ref}>
+      <div style={{ maxWidth: 1200, margin: "0 auto", textAlign: "center" }}>
+        <div data-reveal>
+          <div className="section-label" style={{ justifyContent: "center" }}>Testimonials</div>
+          <h2 className="section-title">Loved by home chefs<br />around the world</h2>
         </div>
 
-        <div className="grid grid-cols-3 max-md:grid-cols-1 gap-6 mt-16">
-          {TESTIMONIALS.map((t, i) => (
-            <div
-              key={t.name}
-              data-reveal
-              className="opacity-0 translate-y-8 transition-all duration-800 p-8 bg-card border border-border rounded-3xl text-left hover:border-border-hover hover:-translate-y-1"
-              style={{ transitionDelay: `${i * 100}ms` }}
-            >
-              <div className="text-accent text-sm mb-4 tracking-[2px]">{t.stars}</div>
-              <p className="text-sm text-muted leading-relaxed mb-6">&ldquo;{t.text}&rdquo;</p>
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-full bg-accent-dim flex items-center justify-center text-sm font-bold text-accent">
-                  {t.initials}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 20, marginTop: 72 }}>
+          {DATA.map((t, i) => (
+            <div key={t.name} data-reveal className="glass testimonial-card" style={{ textAlign: "left", transitionDelay: `${i * 100}ms` }}>
+              <div style={{ color: "var(--accent)", fontSize: "0.9rem", marginBottom: 16, letterSpacing: 2 }}>{t.stars}</div>
+              <p style={{ fontSize: "0.9rem", color: "var(--muted)", lineHeight: 1.8, marginBottom: 24 }}>&ldquo;{t.text}&rdquo;</p>
+              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                <div style={{ width: 40, height: 40, borderRadius: "50%", background: "var(--accent-dim)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.85rem", fontWeight: 700, color: "var(--accent)" }}>
+                  {t.init}
                 </div>
                 <div>
-                  <div className="text-sm font-semibold">{t.name}</div>
-                  <div className="text-[0.7rem] text-muted-2">{t.role}</div>
+                  <div style={{ fontSize: "0.875rem", fontWeight: 600 }}>{t.name}</div>
+                  <div style={{ fontSize: "0.72rem", color: "var(--muted-2)" }}>{t.role}</div>
                 </div>
               </div>
             </div>

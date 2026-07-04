@@ -6,24 +6,13 @@ export function ScrollProgress() {
   const [progress, setProgress] = useState(0);
 
   useEffect(() => {
-    const handleScroll = () => {
-      const totalHeight = document.body.scrollHeight - window.innerHeight;
-      const pct = (window.scrollY / totalHeight) * 100;
-      setProgress(pct);
+    const onScroll = () => {
+      const total = document.body.scrollHeight - window.innerHeight;
+      setProgress(total > 0 ? (window.scrollY / total) * 100 : 0);
     };
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  return (
-    <div
-      className="fixed top-0 left-0 h-[2px] z-[10000]"
-      style={{
-        width: `${progress}%`,
-        background: "linear-gradient(90deg, #4ade80, #22c55e)",
-        boxShadow: "0 0 10px rgba(74,222,128,0.3)",
-        transition: "width 0.1s linear",
-      }}
-    />
-  );
+  return <div className="scroll-progress" style={{ width: `${progress}%` }} />;
 }
