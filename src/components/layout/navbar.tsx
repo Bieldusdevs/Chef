@@ -1,13 +1,36 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useAuth, UserButton } from "@clerk/nextjs";
 import Link from "next/link";
+
+// Safe Clerk imports — may not be available if Clerk is not configured
+let useAuthHook: (() => { isSignedIn: boolean | undefined }) | null = null;
+let UserButtonComponent: React.ComponentType | null = null;
+
+try {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const clerk = require("@clerk/nextjs");
+  useAuthHook = clerk.useAuth;
+  UserButtonComponent = clerk.UserButton;
+} catch {
+  // Clerk not available
+}
 
 export function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const { isSignedIn } = useAuth();
+
+  // Try to use Clerk auth, fallback to not signed in
+  let isSignedIn = false;
+  try {
+    if (useAuthHook) {
+      const auth = useAuthHook();
+      isSignedIn = !!auth.isSignedIn;
+    }
+  } catch {
+    // ClerkProvider not available — treat as signed out
+    isSignedIn = false;
+  }
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 50);
@@ -70,7 +93,7 @@ export function Navbar() {
               >
                 Dashboard
               </Link>
-              <UserButton />
+              {UserButtonComponent && <UserButtonComponent />}
             </>
           )}
         </div>

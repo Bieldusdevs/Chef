@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
-import { ClerkProvider } from "@clerk/nextjs";
 import { Inter } from "next/font/google";
+import { ClerkProvider } from "@clerk/nextjs";
 import "./globals.css";
 
 const inter = Inter({
@@ -52,16 +52,27 @@ export const metadata: Metadata = {
   },
 };
 
+// Check if Clerk is actually configured
+function isClerkReady(): boolean {
+  const key = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY ?? "";
+  return key.startsWith("pk_") && !key.includes("xxxxx") && key.length > 10;
+}
+
 export default function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  return (
-    <ClerkProvider>
-      <html lang="en" className={`${inter.variable}`} suppressHydrationWarning>
-        <body className="antialiased">{children}</body>
-      </html>
-    </ClerkProvider>
+  const content = (
+    <html lang="en" className={inter.variable} suppressHydrationWarning>
+      <body className="antialiased">{children}</body>
+    </html>
   );
+
+  // Only wrap in ClerkProvider if keys are real
+  if (isClerkReady()) {
+    return <ClerkProvider>{content}</ClerkProvider>;
+  }
+
+  return content;
 }
