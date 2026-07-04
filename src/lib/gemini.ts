@@ -1,15 +1,20 @@
 import { GoogleGenAI, Type } from "@google/genai";
 
 // ═══════════════════════════════════════════
-// GEMINI CLIENT
+// GEMINI CLIENT — Gemini 2.5 Flash
 // ═══════════════════════════════════════════
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
+if (!process.env.GEMINI_API_KEY) {
+  throw new Error("GEMINI_API_KEY environment variable is required");
+}
 
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+
+// Gemini 2.5 Flash — fast, capable, structured output
 const MODEL = "gemini-2.5-flash";
 
 // ═══════════════════════════════════════════
-// RECIPE SCHEMA (used for structured output)
+// RECIPE SCHEMA (structured output)
 // ═══════════════════════════════════════════
 
 const recipeSchema = {
@@ -122,7 +127,138 @@ const recipeSchema = {
     "tags",
     "cuisine",
   ],
-};
+} as const;
+
+// ═══════════════════════════════════════════
+// SHARED GEMINI CALL HELPER
+// ═══════════════════════════════════════════
+
+async function callGemini<T>(
+  prompt: string,
+  schema: object,
+  temperature: number = 0.8
+): Promise<T> {
+  const response = await ai.models.generateContent({
+    model: MODEL,
+    contents: prompt,
+    config: {
+      responseMimeType: "application/json",
+      responseSchema: schema,
+      temperature,
+      thinkingConfig: { thinkingBudget: 1024 },
+    },
+  });
+
+  const text = response.text;
+  if (!text) throw new Error("Gemini returned empty response");
+
+  return JSON.parse(text) as T;
+}
+
+async function callGeminiMultimodal<T>(
+  parts: Array<{ text: string } | { inlineData: { mimeType: string; data: string } }>,
+  schema: object,
+  temperature: number = 0.3
+): Promise<T> {
+  const response = await ai.models.generateContent({
+    model: MODEL,
+    contents: [{ role: "user", parts }],
+    config: {
+      responseMimeType: "application/json",
+      responseSchema: schema,
+      temperature,
+      thinkingConfig: { thinkingBudget: 1024 },
+    },
+  });
+
+  const text = response.text;
+  if (!text) throw new Error("Gemini returned empty response");
+
+  return JSON.parse(text) as T;
+}
+
+// ═══════════════════════════════════════════
+// RESPONSE TYPES
+// ═══════════════════════════════════════════
+
+export interface RecipeResponse {
+  name: string;
+  description: string;
+  mealType: "BREAKFAST" | "LUNCH" | "DINNER" | "DESSERT" | "SNACK";
+  difficulty: "EASY" | "MEDIUM" | "HARD";
+  prepTime: number;
+  cookTime: number;
+  totalTime: number;
+  servings: number;
+  ingredients: Array<{ name: string; quantity: string; unit: string; notes?: string }>;
+  steps: Array<{ stepNumber: number; instruction: string; duration?: string; tip?: string }>;
+  tips: string[];
+  substitutions: string[];
+  calories: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+  fiber: number;
+  sugar?: number;
+  sodium?: number;
+  isVegan: boolean;
+  isVegetarian: boolean;
+  isGlutenFree: boolean;
+  isDairyFree: boolean;
+  isKeto: boolean;
+  isLowCarb: boolean;
+  tags: string[];
+  cuisine: string;
+}
+
+export interface SubstitutionsResponse {
+  substitutions: Array<{
+    original: string;
+    substitute: string;
+    notes: string;
+    impactOnFlavor?: string;
+  }>;
+}
+
+export interface ConversionsResponse {
+  conversions: Array<{
+    original: string;
+    converted: string;
+    notes?: string;
+  }>;
+}
+
+export interface TechniqueResponse {
+  technique: string;
+  description: string;
+  steps: string[];
+  commonMistakes: string[];
+  proTips: string[];
+}
+
+export interface MealPlanResponse {
+  name: string;
+  days: Array<{
+    day: string;
+    breakfast: { name: string; calories: number; quickDescription: string };
+    lunch: { name: string; calories: number; quickDescription: string };
+    dinner: { name: string; calories: number; quickDescription: string };
+    snack?: { name: string; calories: number; quickDescription: string };
+  }>;
+  shoppingList: Array<{ name: string; quantity: string; category: string }>;
+  avgCalories: number;
+  avgProtein?: number;
+  avgCarbs?: number;
+  avgFat?: number;
+}
+
+export interface RecognitionResponse {
+  ingredients: Array<{
+    name: string;
+    confidence: "high" | "medium" | "low";
+    notes?: string;
+  }>;
+}
 
 // ═══════════════════════════════════════════
 // GENERATE RECIPE
@@ -136,7 +272,7 @@ export interface GenerateRecipeInput {
   language?: string;
 }
 
-export async function generateRecipe(input: GenerateRecipeInput) {
+export async function generateRecipe(input: GenerateRecipeInput): Promise<RecipeResponse> {
   const {
     ingredients,
     mealType,
@@ -171,27 +307,17 @@ Rules:
 - Include 3-5 realistic ingredient substitutions.
 - Tag dietary flags accurately.`;
 
-  const response = await ai.models.generateContent({
-    model: MODEL,
-    contents: prompt,
-    config: {
-      responseMimeType: "application/json",
-      responseSchema: recipeSchema,
-      temperature: 0.85,
-    },
-  });
-
-  const text = response.text;
-  if (!text) throw new Error("Gemini returned empty response");
-
-  return JSON.parse(text);
+  return callGemini<RecipeResponse>(prompt, recipeSchema, 0.85);
 }
 
 // ═══════════════════════════════════════════
 // IMPROVE RECIPE
 // ═══════════════════════════════════════════
 
-export async function improveRecipe(recipe: Record<string, unknown>, feedback: string) {
+export async function improveRecipe(
+  recipe: Record<string, unknown>,
+  feedback: string
+): Promise<RecipeResponse> {
   const prompt = `You are ChefAI. The user has this recipe and wants it improved.
 
 Current recipe:
@@ -201,19 +327,7 @@ User feedback: "${feedback}"
 
 Improve the recipe based on the feedback. Return the complete improved recipe.`;
 
-  const response = await ai.models.generateContent({
-    model: MODEL,
-    contents: prompt,
-    config: {
-      responseMimeType: "application/json",
-      responseSchema: recipeSchema,
-      temperature: 0.8,
-    },
-  });
-
-  const text = response.text;
-  if (!text) throw new Error("Gemini returned empty response");
-  return JSON.parse(text);
+  return callGemini<RecipeResponse>(prompt, recipeSchema, 0.8);
 }
 
 // ═══════════════════════════════════════════
@@ -223,7 +337,7 @@ Improve the recipe based on the feedback. Return the complete improved recipe.`;
 export async function adaptRecipeByDiet(
   recipe: Record<string, unknown>,
   diet: string
-) {
+): Promise<RecipeResponse> {
   const prompt = `You are ChefAI. Adapt this recipe to be ${diet}-friendly while keeping it delicious.
 
 Current recipe:
@@ -233,19 +347,7 @@ Target diet: ${diet}
 
 Replace ingredients as needed, adjust steps, recalculate nutrition. Return the complete adapted recipe.`;
 
-  const response = await ai.models.generateContent({
-    model: MODEL,
-    contents: prompt,
-    config: {
-      responseMimeType: "application/json",
-      responseSchema: recipeSchema,
-      temperature: 0.7,
-    },
-  });
-
-  const text = response.text;
-  if (!text) throw new Error("Gemini returned empty response");
-  return JSON.parse(text);
+  return callGemini<RecipeResponse>(prompt, recipeSchema, 0.7);
 }
 
 // ═══════════════════════════════════════════
@@ -270,12 +372,12 @@ const substitutionsSchema = {
     },
   },
   required: ["substitutions"],
-};
+} as const;
 
 export async function suggestSubstitutions(
   ingredients: string[],
   reason?: string
-) {
+): Promise<SubstitutionsResponse> {
   const reasonText = reason ? `\nReason for substitution: ${reason}` : "";
 
   const prompt = `You are ChefAI. Suggest substitutions for these ingredients.
@@ -284,19 +386,7 @@ Ingredients: ${ingredients.join(", ")}${reasonText}
 
 For each ingredient, provide 1-2 possible substitutes with notes on how they affect the dish.`;
 
-  const response = await ai.models.generateContent({
-    model: MODEL,
-    contents: prompt,
-    config: {
-      responseMimeType: "application/json",
-      responseSchema: substitutionsSchema,
-      temperature: 0.7,
-    },
-  });
-
-  const text = response.text;
-  if (!text) throw new Error("Gemini returned empty response");
-  return JSON.parse(text);
+  return callGemini<SubstitutionsResponse>(prompt, substitutionsSchema, 0.7);
 }
 
 // ═══════════════════════════════════════════
@@ -320,31 +410,19 @@ const unitConversionSchema = {
     },
   },
   required: ["conversions"],
-};
+} as const;
 
 export async function convertUnits(
   items: string[],
   targetSystem: "metric" | "imperial"
-) {
+): Promise<ConversionsResponse> {
   const prompt = `Convert these cooking measurements to ${targetSystem} units:
 
 ${items.join("\n")}
 
 Be precise. Include notes where volume-to-weight conversions depend on the ingredient.`;
 
-  const response = await ai.models.generateContent({
-    model: MODEL,
-    contents: prompt,
-    config: {
-      responseMimeType: "application/json",
-      responseSchema: unitConversionSchema,
-      temperature: 0.3,
-    },
-  });
-
-  const text = response.text;
-  if (!text) throw new Error("Gemini returned empty response");
-  return JSON.parse(text);
+  return callGemini<ConversionsResponse>(prompt, unitConversionSchema, 0.3);
 }
 
 // ═══════════════════════════════════════════
@@ -370,54 +448,34 @@ const techniqueSchema = {
     },
   },
   required: ["technique", "description", "steps", "commonMistakes", "proTips"],
-};
+} as const;
 
-export async function explainTechnique(technique: string) {
+export async function explainTechnique(
+  technique: string
+): Promise<TechniqueResponse> {
   const prompt = `You are ChefAI, a world-class culinary instructor. Explain this cooking technique in detail:
 
 Technique: "${technique}"
 
 Be thorough but accessible. Include common mistakes beginners make and pro tips.`;
 
-  const response = await ai.models.generateContent({
-    model: MODEL,
-    contents: prompt,
-    config: {
-      responseMimeType: "application/json",
-      responseSchema: techniqueSchema,
-      temperature: 0.7,
-    },
-  });
-
-  const text = response.text;
-  if (!text) throw new Error("Gemini returned empty response");
-  return JSON.parse(text);
+  return callGemini<TechniqueResponse>(prompt, techniqueSchema, 0.7);
 }
 
 // ═══════════════════════════════════════════
 // USE LEFTOVERS
 // ═══════════════════════════════════════════
 
-export async function suggestLeftoverRecipes(leftovers: string[]) {
+export async function suggestLeftoverRecipes(
+  leftovers: string[]
+): Promise<RecipeResponse> {
   const prompt = `You are ChefAI. The user wants to use up these leftovers creatively:
 
 Leftovers: ${leftovers.join(", ")}
 
 Create a creative recipe that transforms these leftovers into something delicious. Think "leftover makeover".`;
 
-  const response = await ai.models.generateContent({
-    model: MODEL,
-    contents: prompt,
-    config: {
-      responseMimeType: "application/json",
-      responseSchema: recipeSchema,
-      temperature: 0.9,
-    },
-  });
-
-  const text = response.text;
-  if (!text) throw new Error("Gemini returned empty response");
-  return JSON.parse(text);
+  return callGemini<RecipeResponse>(prompt, recipeSchema, 0.9);
 }
 
 // ═══════════════════════════════════════════
@@ -492,7 +550,7 @@ const mealPlanSchema = {
     avgFat: { type: Type.NUMBER },
   },
   required: ["name", "days", "shoppingList", "avgCalories"],
-};
+} as const;
 
 export interface GenerateMealPlanInput {
   days: number;
@@ -501,7 +559,9 @@ export interface GenerateMealPlanInput {
   language?: string;
 }
 
-export async function generateMealPlan(input: GenerateMealPlanInput) {
+export async function generateMealPlan(
+  input: GenerateMealPlanInput
+): Promise<MealPlanResponse> {
   const { days, preferences = [], calorieTarget, language = "en" } = input;
 
   const prefInfo =
@@ -523,23 +583,11 @@ Ensure variety across days — avoid repeating the same meals.
 Generate a consolidated shopping list grouped by category (Produce, Protein, Dairy, Pantry, etc.).
 Calculate average daily nutrition.`;
 
-  const response = await ai.models.generateContent({
-    model: MODEL,
-    contents: prompt,
-    config: {
-      responseMimeType: "application/json",
-      responseSchema: mealPlanSchema,
-      temperature: 0.85,
-    },
-  });
-
-  const text = response.text;
-  if (!text) throw new Error("Gemini returned empty response");
-  return JSON.parse(text);
+  return callGemini<MealPlanResponse>(prompt, mealPlanSchema, 0.85);
 }
 
 // ═══════════════════════════════════════════
-// IMAGE RECOGNITION (Gemini Vision)
+// IMAGE RECOGNITION (Gemini 2.5 Flash Vision)
 // ═══════════════════════════════════════════
 
 const ingredientRecognitionSchema = {
@@ -559,38 +607,25 @@ const ingredientRecognitionSchema = {
     },
   },
   required: ["ingredients"],
-};
+} as const;
 
 export async function recognizeIngredientsFromImage(
   imageBase64: string,
   mimeType: string
-) {
-  const response = await ai.models.generateContent({
-    model: MODEL,
-    contents: [
+): Promise<RecognitionResponse> {
+  return callGeminiMultimodal<RecognitionResponse>(
+    [
       {
-        role: "user",
-        parts: [
-          {
-            text: "You are ChefAI. Identify all visible food ingredients in this image. Be specific (e.g., 'red bell pepper' not just 'vegetable'). Include estimated quantity if possible.",
-          },
-          {
-            inlineData: {
-              mimeType,
-              data: imageBase64,
-            },
-          },
-        ],
+        text: "You are ChefAI. Identify all visible food ingredients in this image. Be specific (e.g., 'red bell pepper' not just 'vegetable'). Include estimated quantity if possible.",
+      },
+      {
+        inlineData: {
+          mimeType,
+          data: imageBase64,
+        },
       },
     ],
-    config: {
-      responseMimeType: "application/json",
-      responseSchema: ingredientRecognitionSchema,
-      temperature: 0.3,
-    },
-  });
-
-  const text = response.text;
-  if (!text) throw new Error("Gemini returned empty response");
-  return JSON.parse(text);
+    ingredientRecognitionSchema,
+    0.3
+  );
 }

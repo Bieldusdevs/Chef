@@ -6,6 +6,12 @@ import { requireDbUser, isPremium } from "@/lib/auth";
 import { apiRateLimit } from "@/lib/redis";
 import { sendMealPlanEmail } from "@/lib/resend";
 
+interface ShoppingListItem {
+  name: string;
+  quantity: string;
+  category: string;
+}
+
 export async function POST(req: NextRequest) {
   try {
     const dbUser = await requireDbUser();
@@ -62,17 +68,18 @@ export async function POST(req: NextRequest) {
     });
 
     // Auto-create shopping list
-    if (planData.shoppingList?.length > 0) {
+    const shoppingItems = planData.shoppingList as ShoppingListItem[] | undefined;
+    if (shoppingItems && shoppingItems.length > 0) {
       await prisma.shoppingList.create({
         data: {
           userId: dbUser.id,
           name: `Shopping List — ${planData.name || "Meal Plan"}`,
-          items: planData.shoppingList.map(
-            (item: { name: string; quantity: string; category: string }) => ({
-              ...item,
-              checked: false,
-            })
-          ),
+          items: shoppingItems.map((item: ShoppingListItem) => ({
+            name: item.name,
+            quantity: item.quantity,
+            category: item.category,
+            checked: false,
+          })),
           mealPlanId: mealPlan.id,
         },
       });
@@ -90,7 +97,10 @@ export async function POST(req: NextRequest) {
       console.warn("Failed to send meal plan email");
     }
 
-    return NextResponse.json({ mealPlan, shoppingList: planData.shoppingList }, { status: 201 });
+    return NextResponse.json(
+      { mealPlan, shoppingList: planData.shoppingList },
+      { status: 201 }
+    );
   } catch (error) {
     console.error("[GENERATE_MEAL_PLAN]", error);
     return NextResponse.json(

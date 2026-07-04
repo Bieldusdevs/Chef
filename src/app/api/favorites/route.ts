@@ -39,8 +39,13 @@ export async function GET(req: NextRequest) {
       prisma.favorite.count({ where: { userId: dbUser.id } }),
     ]);
 
+    const mapped = favorites.map((f: typeof favorites[number]) => ({
+      ...f.recipe,
+      favoritedAt: f.createdAt,
+    }));
+
     return NextResponse.json({
-      favorites: favorites.map((f) => ({ ...f.recipe, favoritedAt: f.createdAt })),
+      favorites: mapped,
       total,
       page,
       totalPages: Math.ceil(total / limit),

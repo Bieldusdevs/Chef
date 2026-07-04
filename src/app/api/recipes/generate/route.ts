@@ -57,7 +57,7 @@ export async function POST(req: NextRequest) {
     const { ingredients, mealType, dietaryPreferences, servings, language } =
       parsed.data;
 
-    // ── Generate with Gemini ──
+    // ── Generate with Gemini 2.5 Flash ──
     const recipeData = await generateRecipe({
       ingredients,
       mealType,

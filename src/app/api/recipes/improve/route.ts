@@ -44,11 +44,24 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Recipe not found" }, { status: 404 });
     }
 
-    // Improve with Gemini
-    const improved = await improveRecipe(
-      original as unknown as Record<string, unknown>,
-      feedback
-    );
+    // Improve with Gemini 2.5 Flash
+    const originalRecord: Record<string, unknown> = {
+      name: original.name,
+      description: original.description,
+      mealType: original.mealType,
+      difficulty: original.difficulty,
+      ingredients: original.ingredients,
+      steps: original.steps,
+      tips: original.tips,
+      substitutions: original.substitutions,
+      servings: original.servings,
+      calories: original.calories,
+      protein: original.protein,
+      carbs: original.carbs,
+      fat: original.fat,
+    };
+
+    const improved = await improveRecipe(originalRecord, feedback);
 
     // Save as new recipe
     const recipe = await prisma.recipe.create({

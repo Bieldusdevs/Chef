@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireDbUser } from "@/lib/auth";
+import { requireDbUser, isPremium } from "@/lib/auth";
 import { createCheckoutSession, createPortalSession } from "@/lib/stripe";
 
 // ── GET subscription status ──
@@ -8,10 +8,8 @@ export async function GET() {
     const dbUser = await requireDbUser();
 
     return NextResponse.json({
-      subscription: (dbUser as typeof dbUser & { subscription: unknown }).subscription || null,
-      isPremium:
-        (dbUser as typeof dbUser & { subscription?: { status: string } }).subscription?.status === "ACTIVE" ||
-        (dbUser as typeof dbUser & { subscription?: { status: string } }).subscription?.status === "TRIALING",
+      subscription: dbUser.subscription ?? null,
+      isPremium: isPremium(dbUser),
     });
   } catch (error) {
     console.error("[GET_SUBSCRIPTION]", error);
@@ -35,7 +33,7 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const action = body.action as string;
+    const action = body.action as string | undefined;
 
     if (action === "portal") {
       // Billing portal for managing subscription

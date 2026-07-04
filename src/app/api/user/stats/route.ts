@@ -28,7 +28,13 @@ export async function GET() {
         where: { userId: dbUser.id },
         include: {
           recipe: {
-            select: { id: true, name: true, mealType: true, totalTime: true, calories: true },
+            select: {
+              id: true,
+              name: true,
+              mealType: true,
+              totalTime: true,
+              calories: true,
+            },
           },
         },
         orderBy: { createdAt: "desc" },
@@ -55,15 +61,19 @@ export async function GET() {
       }),
     ]);
 
+    const breakdown = mealTypeBreakdown.map(
+      (m: (typeof mealTypeBreakdown)[number]) => ({
+        mealType: m.mealType,
+        count: m._count,
+      })
+    );
+
     return NextResponse.json({
       totalRecipes,
       totalFavorites,
       totalMealPlans,
       recentHistory,
-      mealTypeBreakdown: mealTypeBreakdown.map((m) => ({
-        mealType: m.mealType,
-        count: m._count,
-      })),
+      mealTypeBreakdown: breakdown,
       avgNutrition: {
         calories: Math.round(avgNutrition._avg.calories || 0),
         protein: Math.round((avgNutrition._avg.protein || 0) * 10) / 10,
