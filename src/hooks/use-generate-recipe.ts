@@ -1,6 +1,7 @@
 "use client";
 
 import { useRecipeStore } from "@/store/recipe-store";
+import { useSettingsStore } from "@/store/settings-store";
 import { useCallback } from "react";
 
 const GENERATION_STEPS = [
@@ -15,7 +16,6 @@ export function useGenerateRecipe() {
   const {
     ingredients,
     mealType,
-    dietaryPreferences,
     servings,
     language,
     isGenerating,
@@ -33,47 +33,66 @@ export function useGenerateRecipe() {
       return;
     }
 
+    // Get API key from settings store
+    const apiKey = useSettingsStore.getState().geminiKey;
+
+    if (!apiKey && !process.env.NEXT_PUBLIC_GEMINI_API_KEY) {
+      // No key available — open settings
+      useSettingsStore.getState().setShowSettings(true);
+      setError("Please add your Gemini API key first.");
+      return;
+    }
+
     setIsGenerating(true);
     setError(null);
     setGenerationStep(0);
 
-    // Animate generation steps
+    // Animate steps
     const stepInterval = setInterval(() => {
-      setGenerationStep(
-        useRecipeStore.getState().generationStep < GENERATION_STEPS.length - 1
-          ? useRecipeStore.getState().generationStep + 1
-          : useRecipeStore.getState().generationStep
-      );
+      const current = useRecipeStore.getState().generationStep;
+      if (current < GENERATION_STEPS.length - 1) {
+        setGenerationStep(current + 1);
+      }
     }, 800);
 
     try {
-      const response = await fetch("/api/recipes/generate", {
+      const response = await fetch("/api/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ingredients,
           mealType,
-          dietaryPreferences,
           servings,
           language,
+          apiKey: apiKey || undefined,
         }),
       });
 
       clearInterval(stepInterval);
 
+      const data = await response.json();
+
       if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || "Failed to generate recipe");
+        // Handle specific errors
+        if (data.error === "NO_API_KEY") {
+          useSettingsStore.getState().setShowSettings(true);
+          throw new Error("Please add your Gemini API key in Settings.");
+        }
+        if (data.error === "INVALID_API_KEY") {
+          useSettingsStore.getState().setShowSettings(true);
+          throw new Error("Invalid API key. Please check your key in Settings.");
+        }
+        if (data.error === "QUOTA_EXCEEDED") {
+          throw new Error("API quota exceeded. Try again later or use a different key.");
+        }
+        throw new Error(data.message || data.error || "Failed to generate recipe");
       }
 
-      const data = await response.json();
       setCurrentRecipe(data.recipe);
       setRemaining(data.remaining);
     } catch (err) {
       clearInterval(stepInterval);
-      setError(
-        err instanceof Error ? err.message : "Something went wrong."
-      );
+      setError(err instanceof Error ? err.message : "Something went wrong.");
     } finally {
       setIsGenerating(false);
       setGenerationStep(0);
@@ -81,7 +100,6 @@ export function useGenerateRecipe() {
   }, [
     ingredients,
     mealType,
-    dietaryPreferences,
     servings,
     language,
     setIsGenerating,

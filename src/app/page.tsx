@@ -9,6 +9,8 @@ import { Footer } from "@/components/layout/footer";
 import { RecipeResult } from "@/components/recipe/recipe-result";
 import { GeneratingOverlay } from "@/components/recipe/generating-overlay";
 import { ScrollProgress } from "@/components/ui/scroll-progress";
+import { SettingsModal } from "@/components/ui/settings-modal";
+import { ApiKeyBanner } from "@/components/ui/api-key-banner";
 
 export default function HomePage() {
   return (
@@ -24,6 +26,8 @@ export default function HomePage() {
       <Testimonials />
       <CTA />
       <Footer />
+      <SettingsModal />
+      <ApiKeyBanner />
     </>
   );
 }
