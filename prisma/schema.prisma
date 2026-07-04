@@ -1,0 +1,222 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+}
+
+// ═══════════════════════════════════════════
+// USER
+// ═══════════════════════════════════════════
+
+model User {
+  id        String   @id @default(cuid())
+  clerkId   String   @unique
+  email     String   @unique
+  name      String?
+  avatarUrl String?
+  locale    String   @default("en")
+
+  // Subscription
+  subscription   Subscription?
+  stripeCustomerId String?  @unique
+
+  // Relations
+  recipes       Recipe[]
+  favorites     Favorite[]
+  history       History[]
+  mealPlans     MealPlan[]
+  shoppingLists ShoppingList[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([clerkId])
+  @@index([email])
+}
+
+// ═══════════════════════════════════════════
+// SUBSCRIPTION
+// ═══════════════════════════════════════════
+
+enum SubscriptionStatus {
+  ACTIVE
+  CANCELED
+  PAST_DUE
+  TRIALING
+  INACTIVE
+}
+
+model Subscription {
+  id                   String             @id @default(cuid())
+  userId               String             @unique
+  user                 User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  stripeSubscriptionId String?            @unique
+  stripePriceId        String?
+  status               SubscriptionStatus @default(INACTIVE)
+  currentPeriodStart   DateTime?
+  currentPeriodEnd     DateTime?
+  cancelAtPeriodEnd    Boolean            @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// ═══════════════════════════════════════════
+// RECIPE
+// ═══════════════════════════════════════════
+
+enum MealType {
+  BREAKFAST
+  LUNCH
+  DINNER
+  DESSERT
+  SNACK
+}
+
+enum Difficulty {
+  EASY
+  MEDIUM
+  HARD
+}
+
+model Recipe {
+  id          String     @id @default(cuid())
+  userId      String?
+  user        User?      @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  // Core
+  name        String
+  description String     @db.Text
+  mealType    MealType
+  difficulty  Difficulty
+  imageUrl    String?
+
+  // Timing
+  prepTime    Int
+  cookTime    Int
+  totalTime   Int
+  servings    Int        @default(2)
+
+  // Content (stored as JSON)
+  ingredients    Json
+  steps          Json
+  tips           Json
+  substitutions  Json
+
+  // Nutrition per serving
+  calories    Int?
+  protein     Float?
+  carbs       Float?
+  fat         Float?
+  fiber       Float?
+  sugar       Float?
+  sodium      Float?
+
+  // Dietary flags
+  isVegan       Boolean @default(false)
+  isVegetarian  Boolean @default(false)
+  isGlutenFree  Boolean @default(false)
+  isDairyFree   Boolean @default(false)
+  isKeto        Boolean @default(false)
+  isLowCarb     Boolean @default(false)
+
+  // Tags & SEO
+  tags        String[]
+  cuisine     String?
+  sourceIngredients String[]
+
+  // Relations
+  favorites   Favorite[]
+  historyEntries History[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([userId])
+  @@index([mealType])
+  @@index([tags])
+}
+
+// ═══════════════════════════════════════════
+// FAVORITES
+// ═══════════════════════════════════════════
+
+model Favorite {
+  id       String @id @default(cuid())
+  userId   String
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  recipeId String
+  recipe   Recipe @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([userId, recipeId])
+  @@index([userId])
+}
+
+// ═══════════════════════════════════════════
+// HISTORY
+// ═══════════════════════════════════════════
+
+model History {
+  id       String @id @default(cuid())
+  userId   String
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  recipeId String
+  recipe   Recipe @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+
+  query      String?  @db.Text
+  mealType   MealType?
+
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt(sort: Desc)])
+}
+
+// ═══════════════════════════════════════════
+// MEAL PLAN
+// ═══════════════════════════════════════════
+
+model MealPlan {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  name      String
+  startDate DateTime
+  endDate   DateTime
+  days      Json
+  notes     String?    @db.Text
+
+  avgCalories Int?
+  avgProtein  Float?
+  avgCarbs    Float?
+  avgFat      Float?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+}
+
+// ═══════════════════════════════════════════
+// SHOPPING LIST
+// ═══════════════════════════════════════════
+
+model ShoppingList {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  name  String
+  items Json
+
+  mealPlanId String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+}
