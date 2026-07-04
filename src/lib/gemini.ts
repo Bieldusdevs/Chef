@@ -1,14 +1,20 @@
 import { GoogleGenAI, Type } from "@google/genai";
 
 // ═══════════════════════════════════════════
-// GEMINI CLIENT — Gemini 2.5 Flash
+// GEMINI CLIENT — Lazy, Gemini 2.5 Flash
 // ═══════════════════════════════════════════
 
-if (!process.env.GEMINI_API_KEY) {
-  throw new Error("GEMINI_API_KEY environment variable is required");
-}
+let _ai: GoogleGenAI | null = null;
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+function getAI(): GoogleGenAI {
+  if (!_ai) {
+    if (!process.env.GEMINI_API_KEY) {
+      throw new Error("GEMINI_API_KEY environment variable is required");
+    }
+    _ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+  }
+  return _ai;
+}
 
 // Gemini 2.5 Flash — fast, capable, structured output
 const MODEL = "gemini-2.5-flash";
@@ -138,7 +144,7 @@ async function callGemini<T>(
   schema: object,
   temperature: number = 0.8
 ): Promise<T> {
-  const response = await ai.models.generateContent({
+  const response = await getAI().models.generateContent({
     model: MODEL,
     contents: prompt,
     config: {
@@ -156,11 +162,13 @@ async function callGemini<T>(
 }
 
 async function callGeminiMultimodal<T>(
-  parts: Array<{ text: string } | { inlineData: { mimeType: string; data: string } }>,
+  parts: Array<
+    { text: string } | { inlineData: { mimeType: string; data: string } }
+  >,
   schema: object,
   temperature: number = 0.3
 ): Promise<T> {
-  const response = await ai.models.generateContent({
+  const response = await getAI().models.generateContent({
     model: MODEL,
     contents: [{ role: "user", parts }],
     config: {
@@ -190,8 +198,18 @@ export interface RecipeResponse {
   cookTime: number;
   totalTime: number;
   servings: number;
-  ingredients: Array<{ name: string; quantity: string; unit: string; notes?: string }>;
-  steps: Array<{ stepNumber: number; instruction: string; duration?: string; tip?: string }>;
+  ingredients: Array<{
+    name: string;
+    quantity: string;
+    unit: string;
+    notes?: string;
+  }>;
+  steps: Array<{
+    stepNumber: number;
+    instruction: string;
+    duration?: string;
+    tip?: string;
+  }>;
   tips: string[];
   substitutions: string[];
   calories: number;
@@ -272,7 +290,9 @@ export interface GenerateRecipeInput {
   language?: string;
 }
 
-export async function generateRecipe(input: GenerateRecipeInput): Promise<RecipeResponse> {
+export async function generateRecipe(
+  input: GenerateRecipeInput
+): Promise<RecipeResponse> {
   const {
     ingredients,
     mealType,
